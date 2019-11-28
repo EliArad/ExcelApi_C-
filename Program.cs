@@ -1,6 +1,7 @@
 ﻿using ExcelLib;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace ExcelTestCase
 {
     class Program
     {
-        struct Employee
+        class Employee
         {
 
             public string Name { get; set; }
@@ -59,7 +60,7 @@ namespace ExcelTestCase
                     Console.WriteLine("error: " + outMessage);
                 }
 
-                if (t.WriteCell(2, 1, 1, "Hello world", out outMessage) == false)
+                if (t.WriteCell(2, 1, 1, "Hello world", true, Color.Red , Color.Transparent, out outMessage) == false)
                 {
                     Console.WriteLine("error: " + outMessage);
                 }
@@ -90,11 +91,26 @@ namespace ExcelTestCase
                 {
 
                 }
+                Employee remp = new Employee();
+                t.ReadStruct<Employee>(0, 6, 2, ref remp, out outMessage);
 
+                
                 if (t.WriteStruct<Employee>(0, 10, 2, employees, out outMessage) == false)
                 {
 
                 }
+
+                List<Employee> remp1 = new List<Employee>();
+                t.ReadStruct<Employee>(0, 11, 2, ref remp1, 2, out outMessage);
+
+                List<object> data1 = new List<object>();
+
+                data1.Add("Eli");
+                data1.Add("1");
+                data1.Add("0.2323");
+                data1.Add("Arad");
+                data1.Add("12112");            
+                t.WriteLine(0, 20, 1, data1, out outMessage);
 
             }
             t.Close();

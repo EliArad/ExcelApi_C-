@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -211,7 +212,24 @@ namespace ExcelLib
             }
         }
 
-       
+        public bool WriteLine(int sheetIndex, int startRowIndex, int startColIndex, List<object> data, out string outMessage)
+        {
+            outMessage = string.Empty;
+            try
+            {
+                for (int i = 0; i < data.Count; i++)
+                {
+                    ws[sheetIndex + 1].Cells[startRowIndex, startColIndex + i] = data[i];
+                }
+                return true;
+            }
+            catch (Exception err)
+            {
+                outMessage = err.Message;
+                return false;
+            }
+        }
+
         public bool WriteStruct<T>(int sheetIndex, int startRowIndex, int startColIndex, T s, out string outMessage)
         {
 
@@ -293,7 +311,11 @@ namespace ExcelLib
             return true;
         }
 
-        public bool WriteCell(int sheetIndex , int rowIndex, int colIndex, object value, out string outMessage)
+        public bool WriteCell(int sheetIndex , 
+                              int rowIndex, 
+                              int colIndex, 
+                              object value, 
+                              out string outMessage)
         {
             outMessage = string.Empty;
 
@@ -309,6 +331,106 @@ namespace ExcelLib
                 outMessage = err.Message;            
                 return false;
             }
+        }
+
+        public bool WriteCell(int sheetIndex,
+                              int rowIndex,
+                              int colIndex,
+                              object value,
+                              bool bold,
+                              Color foreColor,
+                              Color backColor,
+                              out string outMessage)
+        {
+            outMessage = string.Empty;
+
+            try
+            {
+
+                ws[sheetIndex + 1].Cells[rowIndex, colIndex] = value;
+                if (bold == true)
+                    ws[sheetIndex + 1].Cells[rowIndex, colIndex].Font.Bold = true;
+
+                 ws[sheetIndex + 1].Cells[rowIndex, colIndex].Font.Color = foreColor;           
+                 ws[sheetIndex + 1].Cells[rowIndex, colIndex].interior.color = backColor;
+
+                return true;
+            }
+            catch (Exception err)
+            {
+                outMessage = err.Message;
+                return false;
+            }
+        }
+
+        public bool ReadStruct<T>(int sheetIndex, 
+                                  int startRowIndex, 
+                                  int startColIndex, 
+                                  ref List<T> s, 
+                                  int rowCount, 
+                                  out string outMessage) where T : class, new()
+        {
+
+            outMessage = string.Empty;
+            try
+            {
+                int i = 0;
+                Excel.Range xlRange = ws[sheetIndex + 1].UsedRange;
+
+                for (int index = 0; index < rowCount; index++)
+                {
+                    i = 0;
+                    T x = new T();
+                        
+                    foreach (var field in typeof(T).GetFields(BindingFlags.Instance |
+                                                                     BindingFlags.NonPublic |
+                                                                     BindingFlags.Public))
+                    {
+                        object d = xlRange.Cells[startRowIndex, startColIndex + i].Value2.ToString();
+                        field.SetValue(x, d);
+                        i++;
+                    }
+                    s.Add(x);
+                    startRowIndex++;
+                }
+            }
+            catch (Exception err)
+            {
+                outMessage = err.Message;
+                return false;
+            }
+            return true;
+        }
+        public bool ReadStruct<T>(int sheetIndex, int startRowIndex, int startColIndex, ref T s, out string outMessage) where T : class
+        {
+
+           
+            Excel.Range xlRange = ws[sheetIndex + 1].UsedRange;
+
+            outMessage = string.Empty;
+                      
+            try
+            {
+
+                int i = 0;
+                foreach (var field in typeof(T).GetFields(BindingFlags.Instance |
+                                                                 BindingFlags.NonPublic |
+                                                                 BindingFlags.Public))
+                {
+
+                    object d = xlRange.Cells[startRowIndex, startColIndex + i].Value2.ToString();
+                    field.SetValue(s,  d);
+                    i++;
+                }
+            }
+            catch (Exception err)
+            {
+                outMessage = err.Message;
+                return false;
+            }
+
+            return true;
+
         }
     }
 }
