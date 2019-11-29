@@ -197,12 +197,13 @@ namespace ExcelLib
           return ws[sheetIndex + 1].Columns.Count;
         }
 
-        public bool ReadCell(int sheetIndex, int rowIndex, int colIndex, object value, out string outMessage)
+        public bool ReadCell(int sheetIndex, int rowIndex, int colIndex, out object value, out string outMessage)
         {
+            value = 0;
             try
             {
                 outMessage = string.Empty;
-                value = ws[sheetIndex + 1].Cells[rowIndex, 1].Value;
+                value = ws[sheetIndex + 1].Cells[rowIndex, colIndex].Value;
                 return true;
             }
             catch (Exception err)
@@ -431,6 +432,33 @@ namespace ExcelLib
 
             return true;
 
+        }
+
+        public bool ReadColumnList(int sheetIndex,
+                             int startRowIndex,
+                             int startColIndex,
+                             out List<object> list,
+                             int colCount,
+                             out string outMessage)
+        {
+
+            outMessage = string.Empty;
+            list = new List<object>();
+            try
+            {                
+            
+                for (int i = 0; i < colCount; i++)
+                {
+                    ReadCell(sheetIndex, startRowIndex, startColIndex + i, out object d, out outMessage);
+                    list.Add(d);
+                }
+            }
+            catch (Exception err)
+            {
+                outMessage = err.Message;
+                return false;
+            }
+            return true;
         }
     }
 }
