@@ -20,10 +20,13 @@ namespace ExcelLib
         bool m_workbookOpen = false;
         Excel.Sheets ws;
 
-
         public ExcelApi(bool visible = false)
         {
-
+            app = new Excel.Application();
+            app.Visible = visible;
+        }
+        public static void CloseExcel()
+        {
             foreach (Process clsProcess in Process.GetProcesses())
             {
                 if (clsProcess.ProcessName.Equals("EXCEL"))
@@ -31,9 +34,6 @@ namespace ExcelLib
                     clsProcess.Kill();
                 }
             }
-
-            app = new Excel.Application();
-            app.Visible = false;
 
         }
         public bool NewFile(string fileName)
@@ -65,6 +65,11 @@ namespace ExcelLib
 
                 return ws.Count;
             }
+        }
+
+        public string SheetName(int index)
+        {
+            return ws[index].Name;
         }
 
         public void Save(string fileName = "")
@@ -99,9 +104,9 @@ namespace ExcelLib
             {
                 for (int i = 0; i < ws.Count; i++)
                 {
-                    if (ws[i + 1].Name == oldName)
+                    if (ws[i].Name == oldName)
                     {
-                        ws[i + 1].Name = newName;
+                        ws[i].Name = newName;
                         break;
                     }
                 }
@@ -119,7 +124,7 @@ namespace ExcelLib
             outMessage = string.Empty;
             try
             {
-                ws[index + 1].Name = newName;
+                ws[index].Name = newName;
                 return true;
             }
             catch (Exception err)
@@ -176,25 +181,29 @@ namespace ExcelLib
                 return false;
             }
         }
-        public void Close()
+        public void Close(bool terminate)
         {
             if (wb != null)
             {
                 wb.Save();
                 wb.Close();
+                wb = null;
             }
             m_workbookOpen = false;
-            if (app != null)
+            if (app != null && terminate == true)
+            {
                 app.Quit();
+                app = null;
+            }
         }
 
         public int TotalRows(int sheetIndex)
         {
-            return ws[sheetIndex + 1].Rows.Count;
+            return ws[sheetIndex].Rows.Count;
         }
         public int TotalCols(int sheetIndex)
         { 
-          return ws[sheetIndex + 1].Columns.Count;
+          return ws[sheetIndex].Columns.Count;
         }
 
         public bool ReadCell(int sheetIndex, int rowIndex, int colIndex, out object value, out string outMessage)
@@ -203,7 +212,22 @@ namespace ExcelLib
             try
             {
                 outMessage = string.Empty;
-                value = ws[sheetIndex + 1].Cells[rowIndex, colIndex].Value;
+                value = ws[sheetIndex].Cells[rowIndex, colIndex].Value;
+                return true;
+            }
+            catch (Exception err)
+            {
+                outMessage = err.Message;
+                return false;
+            }
+        }
+        public bool ReadCell(int sheetIndex, int rowIndex, int colIndex, out string value, out string outMessage)
+        {
+            value = string.Empty;
+            try
+            {
+                outMessage = string.Empty;
+                value = ws[sheetIndex].Cells[rowIndex, colIndex].Value;
                 return true;
             }
             catch (Exception err)
@@ -220,7 +244,7 @@ namespace ExcelLib
             {
                 for (int i = 0; i < data.Count; i++)
                 {
-                    ws[sheetIndex + 1].Cells[startRowIndex, startColIndex + i] = data[i];
+                    ws[sheetIndex].Cells[startRowIndex, startColIndex + i] = data[i];
                 }
                 return true;
             }
@@ -247,7 +271,7 @@ namespace ExcelLib
                     string name = field.Name;
                     string[] sname = name.Split('>');
                     name = sname[0].Trim('<');
-                    ws[sheetIndex + 1].Cells[startRowIndex, startColIndex + i] = name;
+                    ws[sheetIndex].Cells[startRowIndex, startColIndex + i] = name;
                     i++;
                 }
                 i = 0;
@@ -257,7 +281,7 @@ namespace ExcelLib
                                                                  BindingFlags.Public))
                 {
                     //Console.WriteLine("{0} = {1}", field.Name, field.GetValue(s));
-                    ws[sheetIndex + 1].Cells[startRowIndex + 1, startColIndex + i] = field.GetValue(s);
+                    ws[sheetIndex].Cells[startRowIndex + 1, startColIndex + i] = field.GetValue(s);
                     i++;
                 }
             }
@@ -269,6 +293,16 @@ namespace ExcelLib
 
             return true;
 
+        }
+
+        public void WriteArray<T>(int sheetIndex,int startRow, int startColumn, T[,] array)
+        {
+            var row = array.GetLength(0);
+            var col = array.GetLength(1);
+            Range c1 = (Range)ws[sheetIndex].Cells[startRow, startColumn];
+            Range c2 = (Range)ws[sheetIndex].Cells[startRow + row - 1, startColumn + col - 1];
+            Range range = ws[sheetIndex].Range[c1, c2];
+            range.Value = array;
         }
 
         public bool WriteStruct<T>(int sheetIndex, int startRowIndex, int startColIndex, List<T> s, out string outMessage)
@@ -287,22 +321,29 @@ namespace ExcelLib
                     string name = field.Name;
                     string[] sname = name.Split('>');
                     name = sname[0].Trim('<');
-                    ws[sheetIndex + 1].Cells[startRowIndex, startColIndex + i] = name;
+                    ws[sheetIndex].Cells[startRowIndex, startColIndex + i] = name;
                     i++;
                 }
 
+                object[,] data = new object[s.Count, i];
+                int startColIndex1 = 0;
+                int startRowIndex1 = 0;
                 for (int index = 0; index < s.Count; index++)
                 {
+                    startColIndex1 = 0;
                     i = 0;
                     foreach (var field in typeof(T).GetFields(BindingFlags.Instance |
                                                                      BindingFlags.NonPublic |
                                                                      BindingFlags.Public))
                     {
                         //Console.WriteLine("{0} = {1}", field.Name, field.GetValue(s[index]));
-                        ws[sheetIndex + 1].Cells[startRowIndex + 1 + index, startColIndex + i] = field.GetValue(s[index]);
+                        //ws[sheetIndex].Cells[startRowIndex + 1 + index, startColIndex + i] = field.GetValue(s[index]);
+                        data[startRowIndex1, startColIndex1 + i] = field.GetValue(s[index]);
                         i++;
                     }
+                    startRowIndex1++;
                 }
+                WriteArray(sheetIndex, startRowIndex + 1, startColIndex, data);
             }
             catch (Exception err)
             {
@@ -323,8 +364,8 @@ namespace ExcelLib
             try
             {
                
-                ws[sheetIndex + 1].Cells[rowIndex, colIndex] = value;
-                //ws[sheetIndex + 1].Cells[xname, 1].Font.Bold = true;
+                ws[sheetIndex].Cells[rowIndex, colIndex] = value;
+                //ws[sheetIndex].Cells[xname, 1].Font.Bold = true;
                 return true;
             }
             catch (Exception err)
@@ -348,12 +389,12 @@ namespace ExcelLib
             try
             {
 
-                ws[sheetIndex + 1].Cells[rowIndex, colIndex] = value;
+                ws[sheetIndex].Cells[rowIndex, colIndex] = value;
                 if (bold == true)
-                    ws[sheetIndex + 1].Cells[rowIndex, colIndex].Font.Bold = true;
+                    ws[sheetIndex].Cells[rowIndex, colIndex].Font.Bold = true;
 
-                 ws[sheetIndex + 1].Cells[rowIndex, colIndex].Font.Color = foreColor;           
-                 ws[sheetIndex + 1].Cells[rowIndex, colIndex].interior.color = backColor;
+                 ws[sheetIndex].Cells[rowIndex, colIndex].Font.Color = foreColor;           
+                 ws[sheetIndex].Cells[rowIndex, colIndex].interior.color = backColor;
 
                 return true;
             }
@@ -376,20 +417,34 @@ namespace ExcelLib
             try
             {
                 int i = 0;
-                Excel.Range xlRange = ws[sheetIndex + 1].UsedRange;
 
-                for (int index = 0; index < rowCount; index++)
+
+                int numOfFields = 0;
+                foreach (var field in typeof(T).GetFields(BindingFlags.Instance |
+                                                                     BindingFlags.NonPublic |
+                                                                     BindingFlags.Public))
+                {
+                    numOfFields++;
+                }
+
+
+                Range range = (Excel.Range)ws[sheetIndex].Range[ws[sheetIndex].Cells[startRowIndex, startColIndex], ws[sheetIndex].Cells[startRowIndex + rowCount, startColIndex + numOfFields]];
+                 
+                object[,] values = (object[,])range.Value2;
+
+                startRowIndex = 1;
+               
+                for (int index = 0; index <= rowCount; index++)
                 {
                     i = 0;
                     T x = new T();
-                        
+                    startColIndex = 1;
                     foreach (var field in typeof(T).GetFields(BindingFlags.Instance |
                                                                      BindingFlags.NonPublic |
                                                                      BindingFlags.Public))
                     {
-                        //Console.WriteLine("{0}", field.Name);
                         string ft = field.FieldType.Name;
-                        ReadCell(sheetIndex, startRowIndex, startColIndex + i, out object d, out outMessage);
+                        object d = values[startRowIndex, startColIndex + i];
                         if (d == null)
                         {
                             continue;
@@ -422,11 +477,13 @@ namespace ExcelLib
         public bool ReadStruct<T>(int sheetIndex, int startRowIndex, int startColIndex, ref T s, out string outMessage) where T : class
         {
 
-           
-            Excel.Range xlRange = ws[sheetIndex + 1].UsedRange;
+          
+
 
             outMessage = string.Empty;
-                      
+
+              
+
             try
             {
 
@@ -481,9 +538,70 @@ namespace ExcelLib
             try
             {                
             
-                for (int i = 0; i < colCount; i++)
+                for (int i = 0; i <= colCount; i++)
                 {
                     ReadCell(sheetIndex, startRowIndex, startColIndex + i, out object d, out outMessage);
+                    list.Add(d);
+                }
+            }
+            catch (Exception err)
+            {
+                outMessage = err.Message;
+                return false;
+            }
+            return true;
+        }
+        public string GetExcelColumnName(int columnNumber)
+        {
+            int dividend = columnNumber;
+            string columnName = String.Empty;
+            int modulo;
+
+            while (dividend > 0)
+            {
+                modulo = (dividend - 1) % 26;
+                columnName = Convert.ToChar(65 + modulo).ToString() + columnName;
+                dividend = (int)((dividend - modulo) / 26);
+            }
+
+            return columnName;
+        }
+
+        public int ExcelColumnNameToNumber(string col_name)
+        {
+            int result = 0;
+
+            // Process each letter.
+            for (int i = 0; i < col_name.Length; i++)
+            {
+                result *= 26;
+                char letter = col_name[i];
+
+                // See if it's out of bounds.
+                if (letter < 'A') letter = 'A';
+                if (letter > 'Z') letter = 'Z';
+
+                // Add in the value of this letter.
+                result += (int)letter - (int)'A' + 1;
+            }
+            return result;
+        }
+        public bool ReadRowList(int sheetIndex,
+                                int startRowIndex,
+                                int startColIndex,
+                                out List<object> list,
+                                int rowCount,
+                                out string outMessage)
+        {
+
+            outMessage = string.Empty;
+            list = new List<object>();
+            try
+            {
+
+                for (int i = 0; i < rowCount; i++)
+                {
+                    ReadCell(sheetIndex, startRowIndex + i, startColIndex, out object d, out outMessage);
                     list.Add(d);
                 }
             }
