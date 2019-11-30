@@ -164,7 +164,7 @@ namespace ExcelLib
             }
         }
 
-        public bool AddWorkSheetAtThebegin(string name, out string outMessage)
+        public bool AddWorkSheetAtTheBegin(string name, out string outMessage)
         {
             outMessage = string.Empty;
 
@@ -199,15 +199,29 @@ namespace ExcelLib
 
         public int TotalRows(int sheetIndex)
         {
+            if (sheetIndex < 1)
+            {
+                throw (new SystemException("Sheet index start from 1"));
+            }
             return ws[sheetIndex].Rows.Count;
         }
         public int TotalCols(int sheetIndex)
-        { 
-          return ws[sheetIndex].Columns.Count;
+        {
+            if (sheetIndex < 1)
+            {
+                throw (new SystemException("Sheet index start from 1"));
+            }
+            return ws[sheetIndex].Columns.Count;
         }
 
         public bool ReadCell(int sheetIndex, int rowIndex, int colIndex, out object value, out string outMessage)
         {
+            if (sheetIndex < 1)
+            {
+                value = 0;
+                outMessage = "Sheet index start from 1";
+                return false;
+            }
             value = 0;
             try
             {
@@ -223,6 +237,13 @@ namespace ExcelLib
         }
         public bool ReadCell(int sheetIndex, int rowIndex, int colIndex, out string value, out string outMessage)
         {
+            if (sheetIndex < 1)
+            {
+                value = string.Empty;
+                outMessage = "Sheet index start from 1";
+                return false;
+            }
+
             value = string.Empty;
             try
             {
@@ -239,13 +260,23 @@ namespace ExcelLib
 
         public bool WriteLine(int sheetIndex, int startRowIndex, int startColIndex, List<object> data, out string outMessage)
         {
+            if (sheetIndex  < 1)
+            {
+                outMessage = "Sheet index start from 1";
+                return false;
+            }
             outMessage = string.Empty;
             try
             {
+                object[,] ar = new object[1, data.Count];
                 for (int i = 0; i < data.Count; i++)
                 {
-                    ws[sheetIndex].Cells[startRowIndex, startColIndex + i] = data[i];
+                    ar[0,i] = data[i];
                 }
+                WriteArray<object>(sheetIndex, startRowIndex, startColIndex, ar);
+                /*
+                
+                */
                 return true;
             }
             catch (Exception err)
@@ -257,6 +288,11 @@ namespace ExcelLib
 
         public bool WriteStruct<T>(int sheetIndex, int startRowIndex, int startColIndex, T s, out string outMessage)
         {
+            if (sheetIndex < 1)
+            {              
+                outMessage = "Sheet index start from 1";
+                return false;
+            }
 
             outMessage = string.Empty;
             try
@@ -307,6 +343,11 @@ namespace ExcelLib
 
         public bool WriteStruct<T>(int sheetIndex, int startRowIndex, int startColIndex, List<T> s, out string outMessage)
         {
+            if (sheetIndex < 1)
+            {
+                outMessage = "Sheet index start from 1";
+                return false;
+            }
 
             outMessage = string.Empty;
             try
