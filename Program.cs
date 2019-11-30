@@ -82,6 +82,15 @@ namespace ExcelTestCase
 
                 }
                 */
+
+                List<object> myvalues;
+                t.ReadRowList(1,
+                            1,
+                            1,
+                            out myvalues,
+                            5,
+                            out outMessage);
+
                 if (t.WriteCell(1, 1, 1, "Hello world", out outMessage) == false)
                 {
                     Console.WriteLine("error: " + outMessage);

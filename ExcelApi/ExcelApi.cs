@@ -570,19 +570,21 @@ namespace ExcelLib
                              int startRowIndex,
                              int startColIndex,
                              out List<object> list,
-                             int colCount,
+                             int rowCount,
                              out string outMessage)
         {
 
             outMessage = string.Empty;
             list = new List<object>();
             try
-            {                
-            
-                for (int i = 0; i <= colCount; i++)
-                {
-                    ReadCell(sheetIndex, startRowIndex, startColIndex + i, out object d, out outMessage);
-                    list.Add(d);
+            {
+
+                Range range = (Excel.Range)ws[sheetIndex].Range[ws[sheetIndex].Cells[startRowIndex, startColIndex], ws[sheetIndex].Cells[startRowIndex + rowCount, startColIndex]];
+                object[,] values = (object[,])range.Value2;
+
+                for (int i = 1; i <= rowCount; i++)
+                {                   
+                    list.Add(values[1,i]);
                 }
             }
             catch (Exception err)
@@ -631,7 +633,7 @@ namespace ExcelLib
                                 int startRowIndex,
                                 int startColIndex,
                                 out List<object> list,
-                                int rowCount,
+                                int colCount,
                                 out string outMessage)
         {
 
@@ -640,10 +642,13 @@ namespace ExcelLib
             try
             {
 
-                for (int i = 0; i < rowCount; i++)
-                {
-                    ReadCell(sheetIndex, startRowIndex + i, startColIndex, out object d, out outMessage);
-                    list.Add(d);
+                Range range = (Excel.Range)ws[sheetIndex].Range[ws[sheetIndex].Cells[startRowIndex, startColIndex], ws[sheetIndex].Cells[startRowIndex, startColIndex + colCount]];
+                object[,] values = (object[,])range.Value2;
+
+
+                for (int i = 1; i <= colCount; i++)
+                {                    
+                    list.Add(values[1,i]);
                 }
             }
             catch (Exception err)
