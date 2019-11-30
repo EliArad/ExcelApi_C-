@@ -387,8 +387,25 @@ namespace ExcelLib
                                                                      BindingFlags.NonPublic |
                                                                      BindingFlags.Public))
                     {
-                        object d = xlRange.Cells[startRowIndex, startColIndex + i].Value2.ToString();
-                        field.SetValue(x, d);
+                        //Console.WriteLine("{0}", field.Name);
+                        string ft = field.FieldType.Name;
+                        ReadCell(sheetIndex, startRowIndex, startColIndex + i, out object d, out outMessage);
+                        if (d == null)
+                        {
+                            continue;
+                        }
+                        string ft1 = d.GetType().Name;
+                        if (ft != ft1)
+                        {
+                            if (ft == "String")
+                            {
+                                field.SetValue(x, d.ToString());
+                            }
+                        }
+                        else
+                        {
+                            field.SetValue(x, d);
+                        }
                         i++;
                     }
                     s.Add(x);
@@ -419,8 +436,25 @@ namespace ExcelLib
                                                                  BindingFlags.Public))
                 {
 
-                    object d = xlRange.Cells[startRowIndex, startColIndex + i].Value2.ToString();
-                    field.SetValue(s,  d);
+                    //Console.WriteLine("{0}", field.Name);
+                    string ft = field.FieldType.Name;
+                    ReadCell(sheetIndex, startRowIndex, startColIndex + i, out object d, out outMessage);
+                    if (d == null)
+                    {
+                        continue;
+                    }
+                    string ft1 = d.GetType().Name;
+                    if (ft != ft1)
+                    {
+                        if (ft == "String")
+                        {
+                            field.SetValue(s, d.ToString());
+                        }
+                    }
+                    else
+                    {
+                        field.SetValue(s, d);
+                    }
                     i++;
                 }
             }
