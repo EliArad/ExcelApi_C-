@@ -43,4 +43,15 @@ The function will use the Range capatabiliy to write the data fast:
 we see here that we have  a WriteStruct function which is a template base struct.
 The function uses the c# reflection to get the name of the class fields for the header and the field values.
 
+To read the structure i used the same tecnique.
+
+ List<Employee> remp1 = new List<Employee>();
+ t.ReadStruct<Employee>(1 ,11, 2, ref remp1, 2, out outMessage);
+
+ the Api let you read a structure which is a list and a list of strcture.
+
+ All indexes start from 1, as the C# excel API does.
+
+The API can be expand to use more and more features and i intend to update it offten.
+
 
